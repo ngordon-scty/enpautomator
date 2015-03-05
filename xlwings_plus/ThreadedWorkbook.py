@@ -7,9 +7,9 @@ import time
 
 class ThreadedWorkbook(Workbook):
     def __init__(self, **kwargs):
+        self.busy = True
         pythoncom.CoInitialize()
         self.alive = True
-        self.busy = False
         self.q = Queue.Queue()
         self.thread = threading.Thread(target=self._start_thread, kwargs=kwargs)
         self.thread.start()
@@ -18,10 +18,9 @@ class ThreadedWorkbook(Workbook):
         pythoncom.CoInitialize()
         self.busy = True
         super(ThreadedWorkbook, self).__init__(newinstance=True, **kwargs)
-        self.busy = False
         while self.alive:
             try:
-                task = self.q.get()
+                task = self.q.get(True, 0.01)
                 self.busy = True
                 task.status = "busy"
                 try:
@@ -31,7 +30,6 @@ class ThreadedWorkbook(Workbook):
                 task.status = "finished"
             except Queue.Empty:
                 self.busy = False
-                self.idle()
     
     def _execute_threaded(self, task):
         self.q.put(task)
@@ -53,6 +51,9 @@ class ThreadedWorkbook(Workbook):
         if value != None:
             self._execute_threaded(WorkbookTask(self._set_value,sheetname, address, value))
     
+    def save_as(self,filename):
+        self._execute_threaded(WorkbookTask(self._save_as,filename))
+    
     def _run_macro(self,macroname):
         self.xl_app.Run(macroname)
     
@@ -67,14 +68,14 @@ class ThreadedWorkbook(Workbook):
     def _get_range(self, *args, **kwargs):
         return Range(wkb=self, *args, **kwargs)
     
+    def _save_as(self, filename):
+        self.xl_workbook.SaveAs(filename)
+    
     def _quit(self,force):
         if force:
             self.xl_app.DisplayAlerts = False
         self.xl_app.Quit()
         self.alive = False
-    
-    def idle(self):
-        pass
 
 class WorkbookTask(object):
     def __init__(self, function, *args, **kwargs):
