@@ -1,5 +1,6 @@
 import os.path
 import shutil
+import glob
 from xlwings_plus import ThreadedWorkbook
 
 class ENP(object):
@@ -11,9 +12,14 @@ class ENP(object):
         self.useUNC = False
         self.workbook = None
     
+    def find_latest_revision(self):
+        ENPs = sorted(glob.glob(self.get_path() + 'JB-' + self.projectnumber + '-00*.xl*'), key=os.path.getmtime, reverse=True)
+        if len(ENPs) > 0:
+            self._filename = os.path.basename(ENPs[0])
+    
     def open(self):
-        if self.workbook == None:
-            self.workbook = ENPWorkbook(fullname=self.get_full_path())
+        if self.workbook == None and self.exists():
+            self.workbook = ENPWorkbook(fullname=self.get_full_path(),app_visible=False)
         return self.workbook
     
     def saveas(self,newpath,newfilename):
@@ -40,13 +46,13 @@ class ENP(object):
         if self.exists():
             if not os.path.exists(newpath):
                 os.makedirs(newpath)
-        try:
-            shutil.copy2(self.get_full_path(),os.path.join(newpath,newfilename))
-            self._filename = newfilename
-            self._path = newpath
-            return True
-        except:
-            return False
+            try:
+                shutil.copy2(self.get_full_path(),os.path.join(newpath,newfilename))
+                self._filename = newfilename
+                self._path = newpath
+                return True
+            except:
+                return False
         return False
 
     def get_full_path(self):
