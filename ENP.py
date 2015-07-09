@@ -56,7 +56,7 @@ class ENP(object):
         return False
 
     def get_full_path(self):
-        return self.get_path() + self.get_filename()
+        return os.path.join(self.get_path(),self.get_filename())
     
     def get_filename(self):
         if self._filename != None:
