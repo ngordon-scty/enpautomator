@@ -17,7 +17,11 @@ class ThreadedWorkbook(Workbook):
     def _start_thread(self, **kwargs):
         pythoncom.CoInitialize()
         self.busy = True
-        super(ThreadedWorkbook, self).__init__(newinstance=True, **kwargs)
+        try:
+            super(ThreadedWorkbook, self).__init__(newinstance=True, **kwargs)
+        except Exception as e:
+            self._quit(True)
+            raise e
         while self.alive:
             try:
                 task = self.q.get(True, 0.01)
@@ -43,8 +47,10 @@ class ThreadedWorkbook(Workbook):
     def get_value(self, *args, **kwargs):
         task = WorkbookTask(self._get_value,*args,**kwargs)
         self._execute_threaded(task)
-        while task.status != "finished":
+        while task.status != "finished" and self.alive:
             pass
+        if not task.error is None:
+            raise task.error
         return task.retval
     
     def set_value(self, sheetname, address, value):
