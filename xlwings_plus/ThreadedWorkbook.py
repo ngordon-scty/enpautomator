@@ -9,7 +9,6 @@ class ThreadedWorkbook(Workbook):
     def __init__(self, **kwargs):
         self.busy = True
         pythoncom.CoInitialize()
-        self.alive = True
         self.q = Queue.Queue()
         self.thread = threading.Thread(target=self._start_thread, kwargs=kwargs)
         self.thread.start()
@@ -22,6 +21,7 @@ class ThreadedWorkbook(Workbook):
         except Exception as e:
             self._quit(True)
             raise e
+        self.alive = True
         while self.alive:
             try:
                 task = self.q.get(True, 0.01)
@@ -36,7 +36,10 @@ class ThreadedWorkbook(Workbook):
                 self.busy = False
     
     def _execute_threaded(self, task):
-        self.q.put(task)
+        if self.alive:
+            self.q.put(task)
+        else:
+            raise Exception("This workbook is no longer active")
     
     def run_macro(self,macroname):
         self._execute_threaded(WorkbookTask(self._run_macro,macroname))
