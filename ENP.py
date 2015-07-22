@@ -86,3 +86,20 @@ class ENPWorkbook(ThreadedWorkbook):
     def get_mps(self):
         mps = self.get_value('ENP','E82:K82')
         return filter(None,mps)
+        
+    def get_enp_id_for_mp(self,enp_id,mp_index):
+        row = self.get_enp_row_for_id(enp_id)
+        if row > 0:
+            return self.get_value('ENP',(row,4+mp_index))
+        return None
+    
+    def get_enp_row_for_id(self,enp_id):
+        ids = self.get_value('ENP','A3:A211')
+        row = 3
+        for id in ids:
+            if id == enp_id:
+                return row
+            row = row + 1
+        return 0
+            
+        
