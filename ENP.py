@@ -81,6 +81,7 @@ class ENP(object):
 class ENPWorkbook(ThreadedWorkbook):
     def __init__(self, *args, **kwargs):
         self.name = ""
+        self.ids = None
         super(ENPWorkbook,self).__init__(*args, **kwargs)
 
     def get_mps(self):
@@ -94,9 +95,10 @@ class ENPWorkbook(ThreadedWorkbook):
         return None
     
     def get_enp_row_for_id(self,enp_id):
-        ids = self.get_value('ENP','A3:A211')
+        if self.ids == None:
+            self.ids = self.get_value('ENP','A3:A211')
         row = 3
-        for id in ids:
+        for id in self.ids:
             if id == enp_id:
                 return row
             row = row + 1
