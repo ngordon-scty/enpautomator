@@ -35,6 +35,8 @@ class ThreadedWorkbook(Workbook):
             except Queue.Empty:
                 self.busy = False
         self._quit(True)
+        self.xl_workbook = None
+        self.xl_app = None
     
     def _execute_threaded(self, task):
         self.q.put(task)
