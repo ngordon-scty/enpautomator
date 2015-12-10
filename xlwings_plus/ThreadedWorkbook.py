@@ -45,7 +45,7 @@ class ThreadedWorkbook(Workbook):
         self._execute_threaded(WorkbookTask(self._run_macro,macroname))
         
     def quit(self,force=True):
-        self._execute_threaded(WorkbookTask(self._quit,force))
+        self.alive = False
     
     def get_value(self, *args, **kwargs):
         task = WorkbookTask(self._get_value,*args,**kwargs)
@@ -79,11 +79,39 @@ class ThreadedWorkbook(Workbook):
         self.xl_workbook.SaveAs(filename)
     
     def _quit(self,force):
+        killa = ExcelKiller(self.xl_app)
+        killa.get_handles()
         if force:
             self.xl_app.DisplayAlerts = False
         self.xl_app.Quit()
+        killa.kill()
         self.alive = False
 
+class ExcelKiller(object):
+    def __init__(self, excel):
+        self.excel = excel
+        self.hwnd = None
+    
+    def get_handles(self):
+        if self.excel:
+            self.hwnd = self.excel.Hwnd
+    
+    def kill(self):
+        import win32process
+        import win32gui
+        import win32api
+        import win32con
+        if self.excel and self.hwnd:
+            try:
+                t, p = win32process.GetWindowThreadProcessId(self.hwnd)
+                handle = win32api.OpenProcess(win32con.PROCESS_TERMINATE, 0, p)
+                if handle:
+                    win32api.TerminateProcess(handle, 0)
+                    win32api.CloseHandle(handle)
+            except Exception as e:
+                print("exception in ExcelKiller.kill:")
+                print(e)
+      
 class WorkbookTask(object):
     def __init__(self, function, *args, **kwargs):
         self.status = "waiting"
