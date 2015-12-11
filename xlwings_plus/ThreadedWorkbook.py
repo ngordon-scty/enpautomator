@@ -34,7 +34,6 @@ class ThreadedWorkbook(Workbook):
                 task.status = "finished"
             except Queue.Empty:
                 self.busy = False
-        self._quit(True)
         self.xl_workbook = None
         self.xl_app = None
     
@@ -45,7 +44,7 @@ class ThreadedWorkbook(Workbook):
         self._execute_threaded(WorkbookTask(self._run_macro,macroname))
         
     def quit(self,force=True):
-        self.alive = False
+        self._execute_threaded(WorkbookTask(self._quit,force))
     
     def get_value(self, *args, **kwargs):
         task = WorkbookTask(self._get_value,*args,**kwargs)
