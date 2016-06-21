@@ -1,6 +1,7 @@
 import os.path
 import shutil
 import glob
+import logging
 from xlwings_plus import ThreadedWorkbook
 
 class ENP(object):
@@ -17,9 +18,9 @@ class ENP(object):
         if len(ENPs) > 0:
             self._filename = os.path.basename(ENPs[0])
     
-    def open(self):
+    def open(self,readonly=False):
         if self.workbook == None and self.exists():
-            self.workbook = ENPWorkbook(fullname=self.get_full_path(),app_visible=False)
+            self.workbook = ENPWorkbook(fullname=self.get_full_path(),app_visible=False,readonly=readonly)
         return self.workbook
     
     def saveas(self,newpath,newfilename):
@@ -94,14 +95,44 @@ class ENPWorkbook(ThreadedWorkbook):
             return self.get_value('ENP',(row,4+mp_index))
         return None
     
-    def get_enp_row_for_id(self,enp_id):
+    def set_enp_id_for_mp(self,enp_id,mp_index,value):
+        row = self.get_enp_row_for_id(enp_id)
+        if row > 0:
+            return self.set_value('ENP',(row,4+mp_index),value)
+        return None        
+    
+    def get_ids(self):
         if self.ids == None:
             self.ids = self.get_value('ENP','A3:A211')
+        return self.ids        
+    
+    def get_enp_row_for_id(self,enp_id):
         row = 3
-        for id in self.ids:
+        for id in self.get_ids():
             if id == enp_id:
                 return row
             row = row + 1
         return 0
-            
+    
+    def clear_enp_tab(self):
+        self.set_value('ENP','E3:K211',"")
+
+class ENPCopier(object):
+    def __init__(self,src_wb,dest_wb):
+        self.src_wb = src_wb
+        self.dest_wb = dest_wb
+    
+    def copy(self):
+        if self.src_wb is not None and self.dest_wb is not None:
+            srcmps = self.src_wb.get_mps()
+            index = 0
+            for mp in srcmps:
+                index = index + 1
+                for id in self.src_wb.get_ids():
+                    if id is not None:
+                        val = self.src_wb.get_enp_id_for_mp(id,index)
+                        if val is not None:
+                            logging.debug("copying value '{val}' for mp '{mp} ({mpidx})' to new workbook".format(val=val,mp=mp,mpidx=index))
+                            self.dest_wb.set_enp_id_for_mp(id,index,val)
+        
         

@@ -1,1 +1,1 @@
-from .ENP import ENP
+from .ENP import ENP, ENPCopier

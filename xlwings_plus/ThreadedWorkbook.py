@@ -1,9 +1,10 @@
 from . import Workbook
-from xlwings import Range
+from xlwings import Range, Sheet
 import threading
 import pythoncom
 import Queue
 import time
+import traceback
 
 class ThreadedWorkbook(Workbook):
     def __init__(self, **kwargs):
@@ -30,6 +31,7 @@ class ThreadedWorkbook(Workbook):
                 try:
                     task.retval = task.function(*task.args, **task.kwargs)
                 except Exception as e:
+                    traceback.print_exc()
                     task.error = e
                 task.status = "finished"
             except Queue.Empty:
@@ -43,8 +45,14 @@ class ThreadedWorkbook(Workbook):
     def run_macro(self,macroname):
         self._execute_threaded(WorkbookTask(self._run_macro,macroname))
         
+    def unprotect(self,sheet,password):
+        self._execute_threaded(WorkbookTask(self._unprotect,sheet,password))
+        
     def quit(self,force=True):
         self._execute_threaded(WorkbookTask(self._quit,force))
+        
+    def calculate(self):
+        self._execute_threaded(WorkbookTask(self._calculate))
     
     def get_value(self, *args, **kwargs):
         task = WorkbookTask(self._get_value,*args,**kwargs)
@@ -62,6 +70,13 @@ class ThreadedWorkbook(Workbook):
     
     def _run_macro(self,macroname):
         self.xl_app.Run(macroname)
+        
+    def _unprotect(self,sheetname,password):
+        sheet = Sheet(sheetname)
+        sheet.xl_sheet.Unprotect(password)
+        
+    def _calculate(self):
+        self.xl_app.Calculate()
     
     def _get_value(self, *args, **kwargs):
         ra = self._get_range(*args, **kwargs)
