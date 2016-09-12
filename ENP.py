@@ -121,7 +121,11 @@ class ENPWorkbook(ThreadedWorkbook):
         self.set_value('ENP','E3:K211',"")
         
     def is_crackled(self):
-        return False
+        mps = self.get_mps()
+        crackled = True
+        for mp in mps:
+            crackled = crackled and self.sheet_exists("{mp}-S".format(mp=mp))
+        return crackled
     
     def rename_duplicate_mps(self):
         mps = self.get_mps()
@@ -138,7 +142,7 @@ class ENPWorkbook(ThreadedWorkbook):
         
     def crackle(self,force=False):
         if force or not self.is_crackled():
-            self.rename_duplicate_MPs()
+            self.rename_duplicate_mps()
             self.run_macro('Button_Crackle')
 
 class ENPCopier(object):
