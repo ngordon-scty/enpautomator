@@ -84,9 +84,12 @@ class ENPWorkbook(ThreadedWorkbook):
         self.name = ""
         self.ids = None
         super(ENPWorkbook,self).__init__(*args, **kwargs)
+        
+    def get_mp_cell_location(self):
+        return 'E82:K82'
 
     def get_mps(self):
-        mps = self.get_value('ENP','E82:K82')
+        mps = self.get_value('ENP',self.get_mp_cell_location())
         return filter(None,mps)
         
     def get_enp_id_for_mp(self,enp_id,mp_index):
@@ -116,6 +119,27 @@ class ENPWorkbook(ThreadedWorkbook):
     
     def clear_enp_tab(self):
         self.set_value('ENP','E3:K211',"")
+        
+    def is_crackled(self):
+        return False
+    
+    def rename_duplicate_mps(self):
+        mps = self.get_mps()
+        newmps = []
+        for idx, mp in enumerate(mps):
+            countmps = mps[:(idx+1)].count(mp)
+            if countmps > 1:
+                mp = "{mp}-DUPE{n}".format(mp=mp,n=(countmps-1))
+            newmps.append(mp)
+        for idx, mp in enumerate(newmps):
+            if newmps[idx] != mps[idx]:
+                self.set_enp_id_for_mp(5400,(idx+1),newmps[idx])
+        return mps != newmps
+        
+    def crackle(self,force=False):
+        if force or not self.is_crackled():
+            self.rename_duplicate_MPs()
+            self.run_macro('Button_Crackle')
 
 class ENPCopier(object):
     def __init__(self,src_wb,dest_wb):

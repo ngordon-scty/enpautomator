@@ -65,6 +65,13 @@ class ThreadedWorkbook(Workbook):
         if value != None:
             self._execute_threaded(WorkbookTask(self._set_value,sheetname, address, value))
     
+    def sheet_exists(self, sheetname):
+        task = WorkbookTask(self._get_sheet,sheetname)
+        self._execute_threaded(task)
+        while task.status != "finished" and self.alive:
+            pass
+        return task.retval != None
+    
     def save_as(self,filename):
         self._execute_threaded(WorkbookTask(self._save_as,filename))
     
@@ -72,8 +79,17 @@ class ThreadedWorkbook(Workbook):
         self.xl_app.Run(macroname)
         
     def _unprotect(self,sheetname,password):
-        sheet = Sheet(sheetname)
-        sheet.xl_sheet.Unprotect(password)
+        sheet = self._get_sheet(sheetname)
+        if sheet is not None:
+            sheet.xl_sheet.Unprotect(password)
+     
+    def _get_sheet(self,sheetname):
+        sheet = None
+        try:
+            sheet = Sheet(sheetname, wkb=self)
+        except Exception as e:
+            sheet = None
+        return sheet
         
     def _calculate(self):
         self.xl_app.Calculate()
