@@ -95,9 +95,10 @@ class ThreadedWorkbook(Workbook):
     def _quit(self,force):
         killa = ExcelKiller(self.xl_app)
         killa.get_handles()
-        if force:
-            self.xl_app.DisplayAlerts = False
-        self.xl_app.Quit()
+        if self.xl_app is not None:
+            if force:
+                self.xl_app.DisplayAlerts = False
+            self.xl_app.Quit()
         killa.kill()
         self.alive = False
 
