@@ -71,6 +71,13 @@ class ThreadedWorkbook(Workbook):
         while task.status != "finished" and self.alive:
             pass
         return task.retval != None
+        
+    def activate_sheet(self, sheetname):
+        task = WorkbookTask(self._activate_sheet,sheetname)
+        self._execute_threaded(task)
+        while task.status != "finished" and self.alive:
+            pass
+        return task.retval
     
     def save_as(self,filename):
         self._execute_threaded(WorkbookTask(self._save_as,filename))
@@ -90,6 +97,13 @@ class ThreadedWorkbook(Workbook):
         except Exception as e:
             sheet = None
         return sheet
+    
+    def _activate_sheet(self,sheetname):
+        sheet = self._get_sheet(sheetname)
+        if sheet is not None:
+            sheet.activate()
+            return True
+        return False
         
     def _calculate(self):
         self.xl_app.Calculate()

@@ -144,6 +144,12 @@ class ENPWorkbook(ThreadedWorkbook):
         if force or not self.is_crackled():
             self.rename_duplicate_mps()
             self.run_macro('Button_Crackle')
+    
+    def analyze_mp(self,mpname):
+        if self.activate_sheet(mpname + "-S"):
+            self.run_macro('Button_RunAnalysis_CurrentSelectedMP_WithUpgrades')
+            return True
+        return False
 
 class ENPCopier(object):
     def __init__(self,src_wb,dest_wb):
