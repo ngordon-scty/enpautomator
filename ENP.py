@@ -79,6 +79,9 @@ class ENP(object):
         else:
             return 'Z:\\' + pathsuffix
 
+    def __repr__(self):
+        return "ENP('{path}')".format(path=self.get_full_path())
+
 class ENPWorkbook(ThreadedWorkbook):
     def __init__(self, *args, **kwargs):
         self.name = ""

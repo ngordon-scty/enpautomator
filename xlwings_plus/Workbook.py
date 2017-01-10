@@ -5,6 +5,7 @@ class Workbook(xlwings_Workbook):
     def __init__(self, fullname=None, newinstance=False, readonly=False, **kwargs):
         self.xl_app = None
         self.xl_workbook = None
+        self.window_handle = None
         if newinstance:
             self.xl_app = self._get_new_excel()
             self.xl_workbook = self.open_workbook_in_new_instance(fullname,readonly)

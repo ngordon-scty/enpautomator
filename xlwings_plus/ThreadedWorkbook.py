@@ -5,6 +5,7 @@ import pythoncom
 import Queue
 import time
 import traceback
+import logging
 
 class ThreadedWorkbook(Workbook):
     def __init__(self, **kwargs):
@@ -20,6 +21,7 @@ class ThreadedWorkbook(Workbook):
         self.busy = True
         try:
             super(ThreadedWorkbook, self).__init__(newinstance=True, **kwargs)
+            self.window_handle = self.xl_app.Hwnd
         except Exception as e:
             self._quit(True)
             raise e
@@ -123,39 +125,33 @@ class ThreadedWorkbook(Workbook):
         self.xl_workbook.SaveAs(filename)
     
     def _quit(self,force):
-        killa = ExcelKiller(self.xl_app)
-        killa.get_handles()
         if self.xl_app is not None:
-            if force:
-                self.xl_app.DisplayAlerts = False
-            self.xl_app.Quit()
-        killa.kill()
-        self.alive = False
-
-class ExcelKiller(object):
-    def __init__(self, excel):
-        self.excel = excel
-        self.hwnd = None
-    
-    def get_handles(self):
-        if self.excel:
-            self.hwnd = self.excel.Hwnd
-    
-    def kill(self):
-        import win32process
-        import win32gui
-        import win32api
-        import win32con
-        if self.excel and self.hwnd:
             try:
-                t, p = win32process.GetWindowThreadProcessId(self.hwnd)
+                if force:
+                    self.xl_app.DisplayAlerts = False
+                self.xl_app.Quit()
+            except Exception as e:
+                pass
+        self.force_terminate()
+        self.alive = False
+    
+    def force_terminate(self):
+        logging.debug('{} being force terminated (hwnd:{})'.format(self,self.window_handle))
+        if self.window_handle is not None:
+            import win32process
+            import win32gui
+            import win32api
+            import win32con
+            try:
+                t, p = win32process.GetWindowThreadProcessId(self.window_handle)
                 handle = win32api.OpenProcess(win32con.PROCESS_TERMINATE, 0, p)
                 if handle:
                     win32api.TerminateProcess(handle, 0)
                     win32api.CloseHandle(handle)
+                self.alive = False
+                self.window_handle = None
             except Exception as e:
-                print("exception in ExcelKiller.kill:")
-                print(e)
+                logging.error("exception in ExcelKiller.kill: {e}".format(e.message),exc_info=True)
       
 class WorkbookTask(object):
     def __init__(self, function, *args, **kwargs):
