@@ -8,6 +8,7 @@ class Workbook(xlwings_Workbook):
         self.window_handle = None
         if newinstance:
             self.xl_app = self._get_new_excel()
+            self.window_handle = self.xl_app.Hwnd
             self.xl_workbook = self.open_workbook_in_new_instance(fullname,readonly)
             super(Workbook,self).__init__(xl_workbook = self.xl_workbook, **kwargs)
         else:

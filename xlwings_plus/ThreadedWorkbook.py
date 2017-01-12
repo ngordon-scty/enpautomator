@@ -21,7 +21,6 @@ class ThreadedWorkbook(Workbook):
         self.busy = True
         try:
             super(ThreadedWorkbook, self).__init__(newinstance=True, **kwargs)
-            self.window_handle = self.xl_app.Hwnd
         except Exception as e:
             self._quit(True)
             raise e
