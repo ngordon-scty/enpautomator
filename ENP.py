@@ -94,6 +94,10 @@ class ENPWorkbook(ThreadedWorkbook):
     def get_mps(self):
         mps = self.get_value('ENP',self.get_mp_cell_location())
         return filter(None,mps)
+    
+    def get_mp_index_for_mp(self, mp_name):
+        mps = self.get_value('ENP',self.get_mp_cell_location())
+        return mps.index(mp_name) + 1 if mp_name in mps else None
         
     def get_enp_id_for_mp(self,enp_id,mp_index):
         row = self.get_enp_row_for_id(enp_id)
