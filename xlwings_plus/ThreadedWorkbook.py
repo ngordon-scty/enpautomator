@@ -49,6 +49,13 @@ class ThreadedWorkbook(Workbook):
     def unprotect(self,sheet,password):
         self._execute_threaded(WorkbookTask(self._unprotect,sheet,password))
         
+    def get_print_area(self,sheetname):
+        task = WorkbookTask(self._get_print_area,sheetname)
+        self._execute_threaded(task)
+        while task.status != "finished" and self.alive:
+            pass
+        return task.retval
+        
     def quit(self,force=True):
         self._execute_threaded(WorkbookTask(self._quit,force))
         
@@ -90,6 +97,11 @@ class ThreadedWorkbook(Workbook):
         sheet = self._get_sheet(sheetname)
         if sheet is not None:
             sheet.xl_sheet.Unprotect(password)
+    
+    def _get_print_area(self, sheetname):
+        sheet = self._get_sheet(sheetname)
+        if sheet is not None:
+            return sheet.xl_sheet.PageSetup.PrintArea
      
     def _get_sheet(self,sheetname):
         sheet = None
