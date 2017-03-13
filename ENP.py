@@ -88,6 +88,10 @@ class ENPWorkbook(ThreadedWorkbook):
         self.ids = None
         super(ENPWorkbook,self).__init__(*args, **kwargs)
         
+    def enp_version(self):
+        version = self.get_value('Rev','Version') 
+        return version if version > 0 else None 
+        
     def get_mp_cell_location(self):
         return 'E82:K82'
 
